@@ -62,13 +62,13 @@ const putLikeById = (req, res) => {
         { new: true },
       )
       .populate(['owner', 'likes'])
-      .then((card) => res.status(HTTP_STATUS_OK).send(card))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+      .then((card) => {
+        if (card) {
+          return res.status(HTTP_STATUS_OK).send(card);
         }
         return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
-      });
+      })
+      .catch(() => res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' }));
   } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid card ID' });
 };
 
@@ -81,13 +81,13 @@ const deleteLikeById = (req, res) => {
         { new: true },
       )
       .populate(['owner', 'likes'])
-      .then((card) => res.status(HTTP_STATUS_OK).send(card))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+      .then((card) => {
+        if (card) {
+          return res.status(HTTP_STATUS_OK).send(card);
         }
         return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
-      });
+      })
+      .catch(() => res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' }));
   } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid card ID' });
 };
 
