@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 
 const router = require('./routes');
-const ownerMiddleware = require('./middlewares/ownerLogger');
 
 dotenv.config();
 
@@ -19,7 +18,12 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(ownerMiddleware);
+app.use((req, res, next) => {
+  req.user = {
+    _id: '64eb3a369ba3243bd9a55ae3',
+  };
+  next();
+});
 app.use(router);
 
 app.listen(PORT);
