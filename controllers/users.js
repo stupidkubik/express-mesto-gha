@@ -15,7 +15,7 @@ const createUser = (req, res) => {
     .then((newUser) => res.status(HTTP_STATUS_CREATED).send(newUser))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+        return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: err.message });
       }
       return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
     });
@@ -28,11 +28,10 @@ const getUsers = (req, res) => userModel.find({})
   });
 
 const getUserById = (req, res) => {
-  const { userID } = req.params;
-
-  if (userID.length === 24) {
+  // const { userID } = req.params.userID;
+  if (req.params.userID.length === 24) {
     return userModel
-      .findById(userID)
+      .findById(req.params.userID)
       .then((data) => {
         if (data === null) {
           return res
@@ -43,11 +42,11 @@ const getUserById = (req, res) => {
       })
       .catch((err) => {
         if (err.name === 'CastError') {
-          res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'ID not found' });
+          res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'user ID is not found' });
         }
         res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
       });
-  } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid ID' });
+  } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid user ID' });
 };
 
 const updateUserById = (req, res) => {
