@@ -57,7 +57,7 @@ const updateUserById = (req, res) => {
       .then((user) => res.status(HTTP_STATUS_OK).send(user))
       .catch((err) => {
         if (err.name === 'ValidationError') {
-          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+          return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: err.message });
         }
         return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'User not found' });
       });
@@ -71,7 +71,7 @@ const updateUserAvatarById = (req, res) => {
       .then((user) => res.status(HTTP_STATUS_OK).send(user))
       .catch((err) => {
         if (err.name === 'ValidationError') {
-          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+          return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: err.message });
         }
         return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'User not found' });
       });

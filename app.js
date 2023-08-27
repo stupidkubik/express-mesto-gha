@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const {
+  HTTP_STATUS_NOT_FOUND,
+} = require('http2').constants;
 
 const router = require('./routes');
 
@@ -25,5 +28,9 @@ app.use((req, res, next) => {
   next();
 });
 app.use(router);
+
+app.use('*', (req, res) => {
+  res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'page is not found' });
+});
 
 app.listen(PORT);
