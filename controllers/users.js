@@ -1,58 +1,88 @@
-const { HTTP_STATUS_OK, HTTP_STATUS_NOT_FOUND } = require('http2').constants;
+const {
+  HTTP_STATUS_OK,
+  HTTP_STATUS_CREATED,
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR,
+} = require('http2').constants;
 
-const mongoose = require('mongoose');
 const userModel = require('../models/user');
+
+const createUser = (req, res) => {
+  const { name, about, avatar } = req.body;
+  return userModel
+    .create({ name, about, avatar })
+    .then((newUser) => res.status(HTTP_STATUS_CREATED).send(newUser))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+      }
+      return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+    });
+};
 
 const getUsers = (req, res) => userModel.find({})
   .then((data) => res.status(HTTP_STATUS_OK).send(data))
-  .catch((err) => {
-    console.log(err);
-    res.status(500).send({ message: 'Server Error' });
+  .catch(() => {
+    res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
   });
 
 const getUserById = (req, res) => {
   const { userID } = req.params;
-  return userModel
-    .findById(userID)
-    .then((data) => {
-      if (data === null) {
-        return res
-          .status(HTTP_STATUS_NOT_FOUND)
-          .send({ message: 'User not found' });
-      }
-      return res.status(HTTP_STATUS_OK).send(data);
-    })
-    .catch((err) => {
-      console.log(err);
-      if (err instanceof mongoose.CastError) {
-        res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Invalid ID' });
-      }
-      res.status(500).send({ message: 'Server Error' });
-    });
+
+  if (userID.length === 24) {
+    return userModel
+      .findById(userID)
+      .then((data) => {
+        if (data === null) {
+          return res
+            .status(HTTP_STATUS_NOT_FOUND)
+            .send({ message: 'User not found' });
+        }
+        return res.status(HTTP_STATUS_OK).send(data);
+      })
+      .catch((err) => {
+        if (err.name === 'CastError') {
+          res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'ID not found' });
+        }
+        res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+      });
+  } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid ID' });
 };
 
-// const updateUserById = (req, res) => {};
+const updateUserById = (req, res) => {
+  const { name, about } = req.body;
+  if (req.user._id) {
+    return userModel
+      .findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
+      .then((user) => res.status(HTTP_STATUS_OK).send(user))
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+        }
+        return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'User not found' });
+      });
+  } return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+};
 
-// const deleteUserById = (req, res) => {};
-
-const createUser = (req, res) => {
-  const { name, caption, avatar } = req.body;
-  return userModel
-    .create({ name, caption, avatar })
-    .then((r) => res.status(201).send(r))
-    .catch((err) => {
-      console.log(err);
-      if (err instanceof mongoose.ValidationError) {
-        res.status(400).send({ message: 'Invalid Data' });
-      }
-      res.status(500).send({ message: 'Server Error' });
-    });
+const updateUserAvatarById = (req, res) => {
+  if (req.user._id) {
+    return userModel
+      .findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, { new: 'true', runValidators: true })
+      .then((user) => res.status(HTTP_STATUS_OK).send(user))
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          return res.status(HTTP_STATUS_BAD_REQUEST).send({ error: err.message });
+        }
+        return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'User not found' });
+      });
+  } return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
 };
 
 module.exports = {
+  createUser,
   getUsers,
   getUserById,
-  // updateUserById,
-  // deleteUserById,
-  createUser,
+  updateUserById,
+  updateUserAvatarById,
 };

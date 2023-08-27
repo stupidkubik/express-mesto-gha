@@ -3,9 +3,9 @@ const router = require('express').Router();
 const userRouter = require('./users');
 const cardRouter = require('./cards');
 
-const consoleLoggerMiddleware = require('../middlewares/consoleLogger');
+const ownerMiddleware = require('../middlewares/ownerLogger');
 
-router.use(consoleLoggerMiddleware);
+router.use(ownerMiddleware);
 router.use('/users', userRouter);
 router.use('/cards', cardRouter);
 
