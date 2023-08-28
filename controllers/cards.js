@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const {
   HTTP_STATUS_OK,
   HTTP_STATUS_CREATED,
@@ -17,7 +18,7 @@ const createCard = (req, res) => {
       .then(((newCard) => res.status(HTTP_STATUS_CREATED).send(newCard)))
       .catch(() => res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Invalid Card ID' })))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof mongoose.Error.ValidationError) {
         res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid Data' });
       }
       res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
@@ -32,23 +33,19 @@ const getCards = (req, res) => cardModel.find({})
   });
 
 const deleteCardById = (req, res) => {
-  // const { cardID } = req.params.cardId;s
   if (req.params.cardId.length === 24) {
     return cardModel
       .findByIdAndDelete(req.params.cardId)
-      .then((data) => {
-        if (data === null) {
-          return res
-            .status(HTTP_STATUS_NOT_FOUND)
-            .send({ message: 'Card is not found' });
-        }
-        return res.status(HTTP_STATUS_OK).send({ message: 'Card is deleted' });
-      })
+      .orFail()
+      .then(() => res.status(HTTP_STATUS_OK).send({ message: 'Card is deleted' }))
       .catch((err) => {
-        if (err.name === 'CastError') {
-          res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Invalid card ID' });
+        if (err instanceof mongoose.Error.DocumentNotFoundError) {
+          return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
         }
-        res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+        if (err instanceof mongoose.Error.CastError) {
+          return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Invalid card ID' });
+        }
+        return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
       });
   } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid card ID' });
 };
@@ -61,14 +58,15 @@ const putLikeById = (req, res) => {
         { $addToSet: { likes: req.user._id } },
         { new: true },
       )
+      .orFail()
       .populate(['owner', 'likes'])
-      .then((card) => {
-        if (card) {
-          return res.status(HTTP_STATUS_OK).send(card);
+      .then((card) => res.status(HTTP_STATUS_OK).send(card))
+      .catch((err) => {
+        if (err instanceof mongoose.Error.DocumentNotFoundError) {
+          return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
         }
-        return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
-      })
-      .catch(() => res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' }));
+        return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+      });
   } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid card ID' });
 };
 
@@ -80,14 +78,15 @@ const deleteLikeById = (req, res) => {
         { $pull: { likes: req.user._id } },
         { new: true },
       )
+      .orFail()
       .populate(['owner', 'likes'])
-      .then((card) => {
-        if (card) {
-          return res.status(HTTP_STATUS_OK).send(card);
+      .then((card) => res.status(HTTP_STATUS_OK).send(card))
+      .catch((err) => {
+        if (err instanceof mongoose.Error.DocumentNotFoundError) {
+          return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
         }
-        return res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' });
-      })
-      .catch(() => res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Card not found' }));
+        return res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Server Error' });
+      });
   } return res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Invalid card ID' });
 };
 

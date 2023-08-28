@@ -2,9 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const {
-  HTTP_STATUS_NOT_FOUND,
-} = require('http2').constants;
+const helmet = require('helmet');
 
 const router = require('./routes');
 
@@ -19,6 +17,9 @@ mongoose
 
 const app = express();
 
+app.disable('x-powered-by');
+app.use(helmet());
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -28,9 +29,5 @@ app.use((req, res, next) => {
   next();
 });
 app.use(router);
-
-app.use('*', (req, res) => {
-  res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'page is not found' });
-});
 
 app.listen(PORT);
