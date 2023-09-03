@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 
+const error = require('./middlewares/error');
 const router = require('./routes');
 
 dotenv.config();
@@ -24,10 +25,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   req.user = {
-    _id: '64eb3cfe834f022375095173',
+    _id: '64ecf2f31b07282631b8901b',
   };
   next();
 });
 app.use(router);
+app.use(error);
 
 app.listen(PORT);
