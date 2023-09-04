@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const { SALT_ROUNDS = 10, JWT_SECRET = 'string' } = process.env;
+
 const {
   HTTP_STATUS_OK,
   HTTP_STATUS_CREATED,
@@ -6,20 +11,60 @@ const {
 
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 const userModel = require('../models/user');
 
 const createUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-  return userModel
-    .create({ name, about, avatar })
-    .then((newUser) => res.status(HTTP_STATUS_CREATED).send(newUser))
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+
+  if (!email || !password) {
+    throw new BadRequestError('Email и password не могут быть пустыми');
+  }
+
+  return bcrypt.hash(password, SALT_ROUNDS, (error, hash) => userModel.findOne({ email })
+    .then((data) => {
+      if (data) {
+        throw new ForbiddenError(`${email} уже зарегистрирован`);
+      }
+
+      return userModel.create({
+        name, about, avatar, email, password: hash,
+      })
+        .then((newUser) => res.status(HTTP_STATUS_CREATED).send(newUser)) // Пароль остался
+        .catch((err) => res.status(500).send(err));
+    }).catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        return next(new BadRequestError(err.message));
+      }
+      return next(err);
+    }));
+};
+
+const LoginUser = (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) throw new BadRequestError('Email и password не могут быть пустыми');
+
+  userModel.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      res.status(HTTP_STATUS_OK).send({ token });
+    })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
+        return next(new BadRequestError(err.message));
+      }
+      if (err) {
         return next(new BadRequestError(err.message));
       }
       return next(err);
     });
 };
+
+const getSelf = (req, res, next) => userModel.findById(req.user._id)
+  .then((data) => res.status(HTTP_STATUS_OK).send(data))
+  .catch(next);
 
 const getUsers = (req, res, next) => userModel.find({})
   .then((data) => {
@@ -87,7 +132,9 @@ const updateUserAvatarById = (req, res, next) => {
 
 module.exports = {
   createUser,
+  LoginUser,
   getUsers,
+  getSelf,
   getUserById,
   updateUserById,
   updateUserAvatarById,

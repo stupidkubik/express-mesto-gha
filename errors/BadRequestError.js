@@ -1,5 +1,5 @@
 const {
-  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_BAD_REQUEST, // 400
 } = require('http2').constants;
 
 class BadRequestError extends Error {

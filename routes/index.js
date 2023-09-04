@@ -1,14 +1,15 @@
 const router = require('express').Router();
-const {
-  HTTP_STATUS_NOT_FOUND,
-} = require('http2').constants;
+const { HTTP_STATUS_NOT_FOUND } = require('http2').constants;
 
 const userRouter = require('./users');
 const cardRouter = require('./cards');
+const signupRouter = require('./signupRouter');
+const signinRouter = require('./signinRouter');
+const auth = require('../middlewares/auth');
 
-// const ownerMiddleware = require('../middlewares/ownerLogger');
-
-// router.use(ownerMiddleware);
+router.use('/signup', signupRouter);
+router.use('/signin', signinRouter);
+router.use(auth);
 router.use('/users', userRouter);
 router.use('/cards', cardRouter);
 router.use('*', (req, res) => {

@@ -1,28 +1,67 @@
 const mongoose = require('mongoose');
+const validator = require('validator');
+const bcrypt = require('bcrypt');
+
+const UnauthorizedError = require('../errors/UnauthorizedError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Имя не может быть пустым'],
+    default: 'Жак-Ив Кусто',
     minlength: [2, 'Имя должно быть не меньше двух букв'],
     maxlength: [30, 'Имя должно быть короче 30 букв'],
   },
   about: {
     type: String,
-    required: [true, 'Описание не может быть пустым'],
+    default: 'Исследователь',
     minlength: [2, 'Описание должно быть длинее двух букв'],
     maxlength: [30, 'Описание должно быть короче 30 букв'],
   },
   avatar: {
     type: String,
-    required: [true, 'Аватар не может быть пустым'],
+    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
       validator(str) {
-        return /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(str);
+        validator.isURL(str);
       },
       message: 'Введите существующий URL',
     },
   },
+  email: {
+    type: String,
+    required: [true, 'Обязательное поле'],
+    unique: true,
+    validate: {
+      validator(email) {
+        validator.isEmail(email);
+      },
+      message: 'Введите email',
+    },
+  },
+  password: {
+    type: String,
+    required: [true, 'Введите пароль'],
+    select: false,
+  },
 }, { versionKey: false });
+
+userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
+  return this.findOne({ email })
+    .select('+password')
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new ForbiddenError(`${email} не зарегистрирован`));
+      }
+
+      return bcrypt.compare(password, user.password)
+        .then((isValid) => {
+          if (!isValid) {
+            return Promise.reject(new UnauthorizedError('Неверный пароль'));
+          }
+          return user;
+        });
+    });
+};
 
 module.exports = mongoose.model('user', userSchema);
