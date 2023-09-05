@@ -5,7 +5,7 @@ const {
   LoginUser,
 } = require('../controllers/users');
 
-router.get('/', celebrate({
+router.post('/', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().pattern(/^\S+@\S+\.\S+$/),
     password: Joi.string().required().min(2),
