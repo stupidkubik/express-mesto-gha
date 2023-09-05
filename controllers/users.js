@@ -11,7 +11,7 @@ const {
 
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
-const ForbiddenError = require('../errors/ForbiddenError');
+const ConflictError = require('../errors/ConflictError');
 const userModel = require('../models/user');
 
 const createUser = (req, res, next) => {
@@ -26,13 +26,15 @@ const createUser = (req, res, next) => {
   return bcrypt.hash(password, SALT_ROUNDS, (error, hash) => userModel.findOne({ email })
     .then((data) => {
       if (data) {
-        throw new ForbiddenError(`${email} уже зарегистрирован`);
+        throw new ConflictError(`${email} уже зарегистрирован`);
       }
 
       return userModel.create({
         name, about, avatar, email, password: hash,
       })
-        .then((newUser) => res.status(HTTP_STATUS_CREATED).send(newUser)) // Пароль остался
+        .then((newUser) => res.status(HTTP_STATUS_CREATED).send({
+          name: newUser.name, about: newUser.about, email: newUser.email, avatar: newUser.avatar,
+        }))
         .catch((err) => res.status(500).send(err));
     }).catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
