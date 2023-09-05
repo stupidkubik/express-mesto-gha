@@ -3,7 +3,6 @@ const validator = require('validator');
 const bcrypt = require('bcrypt');
 
 const UnauthorizedError = require('../errors/UnauthorizedError');
-const ForbiddenError = require('../errors/ForbiddenError');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -51,13 +50,13 @@ userSchema.statics.findUserByCredentials = function findUserByCredentials(email,
     .select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new ForbiddenError(`${email} не зарегистрирован`));
+        return Promise.reject(new UnauthorizedError('Неверный email или пароль'));
       }
 
       return bcrypt.compare(password, user.password)
         .then((isValid) => {
           if (!isValid) {
-            return Promise.reject(new UnauthorizedError('Неверный пароль'));
+            return Promise.reject(new UnauthorizedError('Неверный email или пароль'));
           }
           return user;
         });

@@ -12,8 +12,9 @@ router.use('/signin', signinRouter);
 router.use(auth);
 router.use('/users', userRouter);
 router.use('/cards', cardRouter);
-router.use('*', (req, res) => {
-  res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'page is not found' });
+router.use('*', (req, res, next) => {
+  res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Page not found' });
+  next();
 });
 
 module.exports = router;
