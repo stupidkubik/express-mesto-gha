@@ -57,9 +57,6 @@ const LoginUser = (req, res, next) => {
       if (err instanceof mongoose.Error.ValidationError) {
         return next(new BadRequestError(err.message));
       }
-      if (err) {
-        return next(new BadRequestError(err.message));
-      }
       return next(err);
     });
 };
