@@ -34,9 +34,7 @@ const deleteCardById = (req, res, next) => cardModel
   .findById(req.params.cardId)
   .then((card) => {
     if (!card) throw new NotFoundError('Card not found');
-    if (!card.owner.equals(req.user._id)) {
-      throw new ForbiddenError('Invalid user');
-    }
+    if (!card.owner.equals(req.user._id)) throw new ForbiddenError('Invalid user');
 
     cardModel.deleteOne(card)
       .orFail()

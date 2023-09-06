@@ -10,7 +10,6 @@ const error = (err, req, res, next) => {
       ? 'Server Error'
       : message,
   });
-
   next();
 };
 
