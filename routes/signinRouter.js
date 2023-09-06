@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
 
-const LoginUser = require('../controllers/users');
-const REGEX_EMAIL = require('../utils/regex');
+const { LoginUser } = require('../controllers/users');
+const { REGEX_EMAIL } = require('../utils/regex');
 
 router.post('/', celebrate({
   body: Joi.object().keys({

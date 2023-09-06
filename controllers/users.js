@@ -19,11 +19,9 @@ const createUser = (req, res, next) => {
     name, about, avatar, email, password,
   } = req.body;
 
-  if (!email || !password) {
-    throw new BadRequestError('Email и password не могут быть пустыми');
-  }
+  if (!email || !password) throw new BadRequestError('Email и password не могут быть пустыми');
 
-  return bcrypt.hash(password, SALT_ROUNDS)
+  bcrypt.hash(password, SALT_ROUNDS)
     .then((hash) => userModel.create({
       name, about, avatar, email, password: hash,
     })
@@ -32,14 +30,13 @@ const createUser = (req, res, next) => {
       }))
       .catch((err) => {
         if (err.code === 11000) {
-          return next(new ConflictError(`${email} already exist`));
+          next(new ConflictError(`${email} already exist`));
         }
         if (err instanceof mongoose.Error.ValidationError) {
-          return next(new BadRequestError(err.message));
+          next(new BadRequestError(err.message));
         }
-        return next(err);
-      }))
-    .catch(next);
+        next(err);
+      }));
 };
 
 const LoginUser = (req, res, next) => {

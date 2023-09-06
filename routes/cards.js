@@ -7,7 +7,7 @@ const {
   putLikeById,
   deleteLikeById,
 } = require('../controllers/cards');
-const REGEX_URL = require('../utils/regex');
+const { REGEX_URL } = require('../utils/regex');
 
 router.post('/', celebrate({
   body: Joi.object().keys({
