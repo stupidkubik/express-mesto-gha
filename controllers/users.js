@@ -23,25 +23,23 @@ const createUser = (req, res, next) => {
     throw new BadRequestError('Email и password не могут быть пустыми');
   }
 
-  return bcrypt.hash(password, SALT_ROUNDS, (error, hash) => userModel.findOne({ email })
-    .then((data) => {
-      if (data) {
-        throw new ConflictError(`${email} уже зарегистрирован`);
-      }
-
-      return userModel.create({
-        name, about, avatar, email, password: hash,
-      })
-        .then((newUser) => res.status(HTTP_STATUS_CREATED).send({
-          name: newUser.name, about: newUser.about, email: newUser.email, avatar: newUser.avatar,
-        }))
-        .catch((err) => res.status(500).send(err));
-    }).catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        return next(new BadRequestError(err.message));
-      }
-      return next(err);
-    }));
+  return bcrypt.hash(password, SALT_ROUNDS)
+    .then((hash) => userModel.create({
+      name, about, avatar, email, password: hash,
+    })
+      .then((newUser) => res.status(HTTP_STATUS_CREATED).send({
+        name: newUser.name, about: newUser.about, email: newUser.email, avatar: newUser.avatar,
+      }))
+      .catch((err) => {
+        if (err.code === 11000) {
+          return next(new ConflictError(`${email} already exist`));
+        }
+        if (err instanceof mongoose.Error.ValidationError) {
+          return next(new BadRequestError(err.message));
+        }
+        return next(err);
+      }))
+    .catch(next);
 };
 
 const LoginUser = (req, res, next) => {
@@ -72,26 +70,17 @@ const getUsers = (req, res, next) => userModel.find({})
   })
   .catch(next);
 
-const getUserById = (req, res, next) => {
-  if (!(req.params.userID.length === 24)) {
-    throw new BadRequestError('Invalid user ID');
-  }
-
-  return userModel
-    .findById(req.params.userID)
-    .then((data) => {
-      if (!data) throw new NotFoundError('User not found');
-      return res.status(HTTP_STATUS_OK).send(data);
-    })
-    .catch(next);
-};
+const getUserById = (req, res, next) => userModel
+  .findById(req.params.userID)
+  .then((data) => {
+    if (!data) throw new NotFoundError('User not found');
+    return res.status(HTTP_STATUS_OK).send(data);
+  })
+  .catch(next);
 
 const updateUserById = (req, res, next) => {
   const { name, about } = req.body;
   if (!req.user._id) throw new Error('Server Error');
-  if (!(req.user._id.length === 24)) {
-    throw new BadRequestError('Invalid user ID');
-  }
 
   return userModel
     .findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
@@ -110,9 +99,6 @@ const updateUserById = (req, res, next) => {
 
 const updateUserAvatarById = (req, res, next) => {
   if (!req.user._id) throw new Error('Server Error');
-  if (!(req.user._id.length === 24)) {
-    throw new BadRequestError('Invalid user ID');
-  }
 
   return userModel
     .findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, { new: 'true', runValidators: true })
